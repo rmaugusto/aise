@@ -14,6 +14,10 @@ class MapPlugin(GenericPlugin):
     def init(self):
         pass
 
+    def input(self, key):
+        if key == 'g':
+           self.aise_context.map.ground.visible = not self.aise_context.map.ground.visible 
+
     def load(self):
         
         level = load_blender_scene('scenes_plane',
@@ -23,18 +27,18 @@ class MapPlugin(GenericPlugin):
                                     models_only=False
                                    )
         level.scale = Vec3(1,1,1)
+        level.collider = None
         level.ground.texture='grass'
         level.ground.shader = lit_with_shadows_shader
-        level.ground.enabled = False
+        level.ground.enabled = True
+        level.ground.collider = 'mesh'
 
-        level.water.color = color.color(240, 1, 1, 0.6)
+        level.water.color = color.color(240, 1, 1, 0.3)
         level.water.shader = lit_with_shadows_shader
         level.water.enabled = True
+        level.water.collider = None
 
-        # print(level.water.bounds)
-        # Entity(model='cube', scale=(1,1,1), position=level.water.world_position)
-        # Entity(model='cube', position=level.water.position, scale=level.water.bounds, color=color.color(200,1,.8), double_sided=True)
-
+        self.aise_context.map = level
         pass
                 
     def unload(self):

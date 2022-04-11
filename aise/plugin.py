@@ -1,9 +1,10 @@
 from abc import ABC, abstractmethod
 
 from context import AiseContext
+from ursina import Entity
 
 
-class GenericPlugin(ABC):
+class GenericPlugin(ABC, Entity):
 
     def __init__(self, aise_context: AiseContext) -> None:
         super().__init__()
