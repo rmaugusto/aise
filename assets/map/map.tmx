@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.10" tiledversion="1.10.2" orientation="orthogonal" renderorder="right-down" width="34" height="24" tilewidth="32" tileheight="32" infinite="0" nextlayerid="3" nextobjectid="1">
+ <tileset firstgid="1" source="nature.tsx"/>
+ <layer id="1" name="grass" width="34" height="24">
+  <data encoding="base64" compression="zlib">
+   eJzl1cENACAIA8Cuw/4LOoFGocVGSfhoIPcADQBhmpmY1XcaVo6ss9uBxbki3Bynd66O6hypHKz5ZjsYu5atU7+BVdMNB6OXg4M9cy86slHp4+BQ7T5rNrpD9U+wDJ2eXcevOQAJKS5z
+  </data>
+ </layer>
+ <layer id="2" name="water" width="34" height="24">
+  <data encoding="base64" compression="zlib">
+   eJzt0kEKACAIBEDf4/8f2D0wSzfbqAVPoUyiCG80UFZ/pWHkiDqrHer0oYvNsfrG6ujD4si6djkylmg/2oL8S2YWwoGYxeDw8h24W73NYYVhF5l9oPZ4wjIbFserafQoVk0=
+  </data>
+ </layer>
+</map>
