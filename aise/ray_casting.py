@@ -3,6 +3,8 @@ import math
 
 import arcade
 
+import constants
+
 RAYS_COUNT = 7
 
 class RayCasting:
@@ -28,7 +30,7 @@ class RayCasting:
         start_x, start_y = center_x, center_y
 
         try:
-            if self.get_map(start_x, start_y) == 0:
+            if self.gc.map.get_map(start_x, start_y) in (constants.MAP_TYPE_GRASS, constants.MAP_TYPE_OUTSIDE):
                 self.set_ray_data(idx, start_x, start_y, start_x,start_y,0)
                 return
         except Exception as e:
@@ -41,19 +43,13 @@ class RayCasting:
             end_x = start_x + distance * math.cos(angle_rad)
             end_y = start_y + distance * math.sin(angle_rad)
 
-            if self.get_map(end_x, end_y) == 0:
+            if self.gc.map.get_map(end_x, end_y) in (constants.MAP_TYPE_GRASS, constants.MAP_TYPE_OUTSIDE):
                 reached = True
                 self.set_ray_data(idx, start_x, start_y, end_x, end_y, distance)
                 break
 
         if not reached:
             self.set_ray_data(idx, start_x, start_y, end_x, end_y, distance)
-
-    def get_map(self, x, y):
-        try:
-            return self.gc.map[int(x), int(y)]    
-        except:
-                return None
 
     def set_ray_data(self, idx, start_x, start_y, end_x, end_y, distance):
         self.ray_start_points[idx] = (start_x, start_y)

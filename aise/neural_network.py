@@ -4,7 +4,7 @@ import numpy as np
 
 class NeuralNetwork:
 
-    def __init__(self, layer_sizes, activation='leaky_relu'):
+    def __init__(self, layer_sizes, activation='relu'):
         self.layer_sizes = layer_sizes
         self.num_layers = len(layer_sizes)
         self.weights = [np.random.randn(y, x) for x, y in zip(layer_sizes[:-1], layer_sizes[1:])]

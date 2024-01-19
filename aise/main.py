@@ -1,11 +1,20 @@
-import math
 import arcade
-import numpy as np
-from random import randrange
+from panel import TextPanel
+from neural_network import NeuralNetwork
+from thread import ThreadPool
 from game_context import GameContext
 from sprites import Fish
 from ray_casting import RayCasting
-import constants
+from operator import itemgetter
+
+TOTAL_FISHES = 80
+
+SENSOR_COUNT = 6
+SENSOR_MAX_DISTANCE = 100
+
+BRAIN_SIZE_INPUT = 1 + 1 + SENSOR_COUNT
+BRAIN_SIZE_HIDDEN = 6
+BRAIN_SIZE_OUTPUT = 4
 
 SCREEN_WIDTH = 1600
 SCREEN_HEIGHT = 1000
@@ -22,19 +31,12 @@ class MyGame(arcade.Window):
         self.game_context = GameContext()
         self.physics_engine = None
         self.frame_count = 0
-
-        
-        #self.wall_sprite = arcade.SpriteSolidColor(800,600,arcade.color.WHITE)
-        #self.wall_sprite.center_x = MAP_WIDTH/2
-        #self.wall_sprite.center_y = MAP_HEIGHT/2
-
-        #self.wall = np.full((int(MAP_WIDTH), int(MAP_HEIGHT)), 1)
-        #x = int(self.wall_sprite.center_x - (self.wall_sprite.width/2))
-        #y = int(self.wall_sprite.center_y - (self.wall_sprite.height/2))
-        #dx = int(self.wall_sprite.center_x + (self.wall_sprite.width/2))
-        #dy = int(self.wall_sprite.center_y + (self.wall_sprite.height/2))
-        #self.wall[ x:dx, y:dy ] = 0 
-
+        self.generation = 1
+        self.fishes = []
+        self.best_brain = None
+        self.text_panel = TextPanel(SCREEN_WIDTH, SCREEN_HEIGHT)
+        self.pool = ThreadPool(10)
+        self.best_fish = None
 
     def setup(self):
 
@@ -55,45 +57,83 @@ class MyGame(arcade.Window):
         graph.center_y = self.height - GRAPH_HEIGHT / 2
         self.perf_graph_list.append(graph)
 
+        self.game_context.map.load_map("assets/map/map.tmx")
 
-        map_name = "assets/map/map.tmx"
+        self.restart()
 
-        self.tile_map = arcade.load_tilemap(map_name, 1)
-        self.water_list = self.tile_map.sprite_lists["water"]
-        self.grass_list = self.tile_map.sprite_lists["grass"]
+    def restart(self):
+        self.fishes = []
 
-        self.game_context.map_width = self.tile_map.width * self.tile_map.tile_width
-        self.game_context.map_height = self.tile_map.height * self.tile_map.tile_height
-        
+        x, y = self.game_context.map.get_random_lake_position()
+        for i in range(TOTAL_FISHES):
+            sensor = RayCasting(SENSOR_COUNT,SENSOR_MAX_DISTANCE,self.game_context)
 
-        # Criar um array NumPy inicializado com False
-        self.game_context.map = np.full((self.game_context.map_width, self.game_context.map_height ), constants.MAP_TYPE_GRASS)
+            if self.best_brain:
+                brain = self.best_brain.clone()
+                brain.mutate_randomly()
+            else:
+                brain = NeuralNetwork([BRAIN_SIZE_INPUT, BRAIN_SIZE_HIDDEN, BRAIN_SIZE_HIDDEN, BRAIN_SIZE_OUTPUT],'relu')
 
-        # Marcar posições ocupadas com True
-        for sprite in self.water_list:
-            x = int(sprite.center_x - (self.tile_map.tile_width / 2))
-            x2 = int(x + self.tile_map.tile_width)
-            y = int(sprite.center_y - (self.tile_map.tile_height / 2))
-            y2 = int(y + self.tile_map.tile_height)
+            fish = Fish(id=i,angle=0,ray_casting=sensor,brain=brain)
+            fish.center_x = x
+            fish.center_y = y
 
-            self.game_context.map[x:x2, y:y2] = constants.MAP_TYPE_LAKE
+            self.fishes.append(fish)
 
+    def update_fish(self, fish, delta_time):
 
-        self.fish = Fish(angle=0,ray_casting=RayCasting(6,100,self.game_context))
-        self.fish.center_x = 800
-        self.fish.center_y = 100
-
-
-
-        self.post_setup()
-
-    def post_setup(self):
-        pass
+        fish.update(delta_time)
 
     def on_update(self, delta_time):
-        self.fish.forward()
-        self.fish.update()
+        pass
+        all_dead = True
 
+        for fish in self.fishes:
+            if fish.alive:
+                all_dead = False
+                self.pool.add_task(self.update_fish, fish, delta_time)
+                #self.update_fish(fish)
+
+        self.pool.wait_completion()
+
+        self.fishes.sort(key=lambda x: x.reward.total, reverse=True)
+
+        best_fish_alive = self.fishes[0]
+        self.best_fish  = best_fish_alive
+
+        for f in self.fishes:
+            if f.reward.total > self.best_fish.reward.total:
+                self.best_fish = f
+
+                if f.alive:
+                    best_fish_alive = f
+
+        #best_fish_alive = max(filter(lambda f: f.alive, self.fishes), key=lambda f: f.reward.total)
+        #self.best_fish = max(self.fishes, key=lambda f: f.reward.total)
+
+        if all_dead:
+            self.end_generation()
+            self.restart()
+
+        self.text_panel.set_text(0, f"Geração: {self.generation}")
+
+        pos = 0
+        for i in range(0,5):
+            f = self.fishes[i]
+            pos += 1
+            self.text_panel.set_text(pos, f"Pos #{i} - #{f.id}")
+            pos += 1
+            self.text_panel.set_text(pos, f"-> Reward: {f.reward.total}, Dist: {f.distance}")
+
+        #self.text_panel.set_text(1, f"Melhor - #{self.best_fish.id}")
+        #self.text_panel.set_text(2, f"-> Reward: {self.best_fish.reward.total}, Dist: {self.best_fish.distance}")
+        #self.text_panel.set_text(3, f"Melhor vivo - #{best_fish_alive.id}")
+        #self.text_panel.set_text(4, f"-> Reward: {best_fish_alive.reward.total}, Dist: {best_fish_alive.distance}")
+
+    def end_generation(self):
+        self.best_brain = self.best_fish.brain
+        self.generation += 1
+    
     def on_draw(self):
 
         self.clear()
@@ -102,10 +142,14 @@ class MyGame(arcade.Window):
 
         self.perf_graph_list.draw()
 
-        self.water_list.draw()
-        self.grass_list.draw()
+        self.game_context.map.water_list.draw()
+        self.game_context.map.grass_list.draw()
 
-        self.fish.draw()
+        for fish in self.fishes:
+            if fish.alive:
+                fish.draw()
+
+        self.text_panel.draw()
 
         arcade.finish_render()
 
