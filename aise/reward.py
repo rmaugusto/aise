@@ -14,11 +14,11 @@ class Reward():
 
         self.distance()
 
-        #if not self.in_circle():
+        self.in_circle()
 
         
-        if self.is_moving_away_from_wall() > 0:
-            self.total += 40
+        #if self.is_moving_away_from_wall() > 0:
+        #    self.total += 40
 
     def is_moving_away_from_wall(self):
 

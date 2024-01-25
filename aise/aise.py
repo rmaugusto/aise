@@ -9,6 +9,7 @@ from sprites import Fish
 from ray_casting import RayCasting
 
 TOTAL_FISHES = 20
+TOTAL_UPDATE_THREADS = 10
 
 SENSOR_COUNT = 6
 SENSOR_MAX_DISTANCE = 100
@@ -17,14 +18,7 @@ BRAIN_SIZE_INPUT = 1 + 1 + SENSOR_COUNT
 BRAIN_SIZE_HIDDEN = 6
 BRAIN_SIZE_OUTPUT = 4
 
-SCREEN_WIDTH = 1600
-SCREEN_HEIGHT = 1000
-
-GRAPH_WIDTH = 200
-GRAPH_HEIGHT = 120
-GRAPH_MARGIN = 5
-
-arcade.enable_timings()
+#1845
 
 class Aise():
     def __init__(self):
@@ -32,7 +26,7 @@ class Aise():
         self.generation = 1
         self.fishes = []
         self.best_brain = None
-        self.pool = ThreadPool(10)
+        self.pool = ThreadPool(TOTAL_UPDATE_THREADS)
         self.best_fish = None
         self.best_fish_rewards: List[float] = []
         self.best_fish_distance= []
@@ -82,8 +76,8 @@ class Aise():
         self.best_fish  = best_fish_alive
 
         for f in self.fishes:
-            if f.reward.total > self.best_fish.reward.total:
-            #if f.distance > self.best_fish.distance:
+            #if f.reward.total > self.best_fish.reward.total:
+            if f.distance > self.best_fish.distance:
                 self.best_fish = f
 
                 if f.alive:
@@ -93,19 +87,7 @@ class Aise():
             self.end_generation()
             self.restart()
 
-        if not self.game_context.headless:
-            self.update_text_panel()
 
-    def update_text_panel(self):
-        self.text_panel.set_text(0, f"Geração: {self.generation}")
-
-        pos = 0
-        for i in range(0,5):
-            f = self.fishes[i]
-            pos += 1
-            self.text_panel.set_text(pos, f"Pos #{i} - #{f.id}")
-            pos += 1
-            self.text_panel.set_text(pos, f"-> Reward: {f.reward.total}, Dist: {f.distance}")
 
     def end_generation(self):
         
