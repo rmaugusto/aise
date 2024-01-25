@@ -1,15 +1,39 @@
+import numpy as np
+
+
 class Reward():
     def __init__(self, entity):
         self.entity = entity
         self.previous_angles = []
+        self.min_distances = np.array([])
         self.total = 0
         self.last_distance = entity.distance
 
     def update(self):
 
-        self.in_circle()
 
         self.distance()
+
+        #if not self.in_circle():
+
+        
+        if self.is_moving_away_from_wall() > 0:
+            self.total += 40
+
+    def is_moving_away_from_wall(self):
+
+        self.min_distances = np.append(self.min_distances, self.entity.sensor.min_distance)
+
+        if len(self.min_distances) > 20:
+            self.min_distances = self.min_distances[1:]
+        else:
+            return -1
+
+        slopes = np.diff(self.min_distances)
+        average_slope = np.mean(slopes)
+
+        #print(self.min_distances.shape, average_slope)
+        return average_slope
 
     def distance(self):
 
@@ -25,6 +49,9 @@ class Reward():
 
         if self.is_moving_in_circles():
             self.total -= 20
+            return True
+        
+        return False
 
 
     def is_moving_in_circles(self):
@@ -37,5 +64,5 @@ class Reward():
             angle_diff = abs(self.previous_angles[i] - self.previous_angles[i - 1])
             total_change += angle_diff
 
-        return total_change > 250
+        return total_change > 360
 

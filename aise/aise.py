@@ -26,41 +26,18 @@ GRAPH_MARGIN = 5
 
 arcade.enable_timings()
 
-class MyGame(arcade.Window):
+class Aise():
     def __init__(self):
-        super().__init__(SCREEN_WIDTH, SCREEN_HEIGHT, "AISE")
         self.game_context = GameContext()
-        self.physics_engine = None
-        self.frame_count = 0
         self.generation = 1
         self.fishes = []
         self.best_brain = None
-        self.text_panel = TextPanel(SCREEN_WIDTH, SCREEN_HEIGHT)
         self.pool = ThreadPool(10)
         self.best_fish = None
         self.best_fish_rewards: List[float] = []
         self.best_fish_distance= []
-        self.br_graph = AiseGraph(GRAPH_WIDTH, GRAPH_HEIGHT,graph_data="Rewards",data_to_graph= self.best_fish_rewards)
 
     def setup(self):
-
-        self.perf_graph_list = arcade.SpriteList()
-
-        graph = arcade.PerfGraph(GRAPH_WIDTH, GRAPH_HEIGHT, graph_data="FPS")
-        graph.center_x = GRAPH_WIDTH / 2
-        graph.center_y = self.height - GRAPH_HEIGHT / 2
-        self.perf_graph_list.append(graph)
-
-        graph = arcade.PerfGraph(GRAPH_WIDTH, GRAPH_HEIGHT, graph_data="on_draw")
-        graph.center_x = GRAPH_WIDTH / 2 + (GRAPH_WIDTH + GRAPH_MARGIN) 
-        graph.center_y = self.height - GRAPH_HEIGHT / 2
-        self.perf_graph_list.append(graph)
-
-        graph = self.br_graph
-        graph.center_x = GRAPH_WIDTH / 2 + (GRAPH_WIDTH + GRAPH_MARGIN) * 2
-        graph.center_y = self.height - GRAPH_HEIGHT / 2
-        self.perf_graph_list.append(graph)
-
 
         self.game_context.map.load_map("assets/map/map.tmx")
 
@@ -86,7 +63,6 @@ class MyGame(arcade.Window):
             self.fishes.append(fish)
 
     def update_fish(self, fish, delta_time):
-
         fish.update(delta_time)
 
     def on_update(self, delta_time):
@@ -97,7 +73,6 @@ class MyGame(arcade.Window):
             if fish.alive:
                 all_dead = False
                 self.pool.add_task(self.update_fish, fish, delta_time)
-                #self.update_fish(fish)
 
         self.pool.wait_completion()
 
@@ -114,13 +89,14 @@ class MyGame(arcade.Window):
                 if f.alive:
                     best_fish_alive = f
 
-        #best_fish_alive = max(filter(lambda f: f.alive, self.fishes), key=lambda f: f.reward.total)
-        #self.best_fish = max(self.fishes, key=lambda f: f.reward.total)
-
         if all_dead:
             self.end_generation()
             self.restart()
 
+        if not self.game_context.headless:
+            self.update_text_panel()
+
+    def update_text_panel(self):
         self.text_panel.set_text(0, f"Geração: {self.generation}")
 
         pos = 0
@@ -131,11 +107,6 @@ class MyGame(arcade.Window):
             pos += 1
             self.text_panel.set_text(pos, f"-> Reward: {f.reward.total}, Dist: {f.distance}")
 
-        #self.text_panel.set_text(1, f"Melhor - #{self.best_fish.id}")
-        #self.text_panel.set_text(2, f"-> Reward: {self.best_fish.reward.total}, Dist: {self.best_fish.distance}")
-        #self.text_panel.set_text(3, f"Melhor vivo - #{best_fish_alive.id}")
-        #self.text_panel.set_text(4, f"-> Reward: {best_fish_alive.reward.total}, Dist: {best_fish_alive.distance}")
-
     def end_generation(self):
         
         self.best_fish_rewards.append(self.best_fish.reward.total)
@@ -145,43 +116,8 @@ class MyGame(arcade.Window):
         self.generation += 1
     
     def on_draw(self):
-
-        self.clear()
-
-        arcade.start_render()
-
-        self.perf_graph_list.draw()
-
-        self.game_context.map.water_list.draw()
-        self.game_context.map.grass_list.draw()
-
-        for fish in self.fishes:
-            if fish.alive:
-                fish.draw()
-
-        self.text_panel.draw()
-
-        arcade.finish_render()
-
-    def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
         pass
-            
-    def on_resize(self, width, height):
-        super().on_resize(width, height)
 
-
-    def on_key_press(self, key, modifiers):
-        pass
-        #if key == arcade.key.LEFT:
-
-    def on_key_release(self, key, modifiers):
-        pass
-        #if key == arcade.key.UP:
-        #    self.best_car.stop()
-        #if key == arcade.key.LEFT:
-        #    self.best_car.rotating_left = False
-        #if key == arcade.key.RIGHT:
-        #    self.best_car.rotating_right = False
 
 
 def main():

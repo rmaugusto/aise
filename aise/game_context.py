@@ -5,6 +5,7 @@ from map import Map
 class GameContext():
     def __init__(self):
         self.map = Map()
+        self.headless = False
 
 class GameData(object):
     def __init__(self, brain, generation, training_time=0):

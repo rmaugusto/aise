@@ -82,8 +82,8 @@ class Fish(arcade.Sprite):
 
             self.forward()
 
-            if decision[2] <= 0 and decision[3] <= 0:
-                self.distance += self.speed
+            #if decision[2] <= 0 and decision[3] <= 0:
+            self.distance += self.speed
 
             self.sensor.cast_rays(self.angle, self.center_x, self.center_y)
             
