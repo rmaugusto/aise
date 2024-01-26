@@ -12,19 +12,23 @@ TEXTURE_CHANGE_INTERVAL = 0.4
 INITIAL_ENERGY = 1000
 
 class Fish(arcade.Sprite):
-    def __init__(self, id=-1, scale=0.5, x=0, y=0, angle=0, ray_casting=None, brain=None):
+    def __init__(self, id=-1, scale=0.5, x=0, y=0, angle=0, ray_casting=None, brain=None, game_context= None):
         super().__init__(scale=scale, center_x=x, center_y=y)
         self.id = id
         self.angle = angle
         self.collided = False
         self.alive = True
+        self.game_context = game_context
         self.speed = MIN_FISH_SPEED
-        self.textures = arcade.load_spritesheet("assets/sprites/fish.png", 95, 95, 1, 12)
-        self.texture_idx = 0
-        self.animation_direction = 1
-        self.texture_change_timer = 0
+
+        if not self.game_context.headless:
+            self.textures = arcade.load_spritesheet("assets/sprites/fish.png", 95, 95, 1, 12)
+            self.texture_idx = 0
+            self.set_texture(self.texture_idx)
+            self.animation_direction = 1
+            self.texture_change_timer = 0
+
         self.distance = 0
-        self.set_texture(self.texture_idx)
         self.sensor = ray_casting
         self.brain = brain
         self.reward = Reward(self)
@@ -61,7 +65,8 @@ class Fish(arcade.Sprite):
 
         if self.alive:
 
-            self.update_texture(delta_time)
+            if not self.game_context.headless:
+                self.update_texture(delta_time)
 
             input = [self.distance, self.reward.total] + self.sensor.ray_distance
             sensor_input = np.array(input).reshape(-1, 1)

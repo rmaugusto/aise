@@ -6,6 +6,7 @@ name = "pypi"
 [packages]
 arcade = "==2.6.17"
 numpy = "==1.26.2"
+numba = "==0.58.1"
 #SciPy = "1.11.4"
 #pymunk = "==6.4.0"
 

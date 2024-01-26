@@ -5,6 +5,8 @@ import arcade
 
 import constants
 
+from numba import njit
+
 RAYS_COUNT = 7
 
 class RayCasting:

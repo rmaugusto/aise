@@ -3,6 +3,7 @@ from aise import Aise
 from graph import AiseGraph
 from panel import TextPanel
 
+
 SCREEN_WIDTH = 1600
 SCREEN_HEIGHT = 1000
 

@@ -1,10 +1,7 @@
 from typing import List
-import arcade
-from graph import AiseGraph, AiseMGraph
-from panel import TextPanel
 from neural_network import NeuralNetwork
 from thread import ThreadPool
-from game_context import GameContext
+from game_context import GameContext, GameData
 from sprites import Fish
 from ray_casting import RayCasting
 
@@ -30,10 +27,18 @@ class Aise():
         self.best_fish = None
         self.best_fish_rewards: List[float] = []
         self.best_fish_distance= []
+        self.game_data = GameData()
 
     def setup(self):
 
         self.game_context.map.load_map("assets/map/map.tmx")
+
+        try:        
+            gd = GameData.load()
+            self.best_brain = gd.brain
+            self.generation = gd.generation
+        except:
+            pass    
 
         self.restart()
 
@@ -50,7 +55,7 @@ class Aise():
             else:
                 brain = NeuralNetwork([BRAIN_SIZE_INPUT, BRAIN_SIZE_HIDDEN, BRAIN_SIZE_HIDDEN, BRAIN_SIZE_OUTPUT],'relu')
 
-            fish = Fish(id=i,angle=0,ray_casting=sensor,brain=brain)
+            fish = Fish(id=i,angle=0,ray_casting=sensor,brain=brain, game_context=self.game_context)
             fish.center_x = x
             fish.center_y = y
 
@@ -87,8 +92,6 @@ class Aise():
             self.end_generation()
             self.restart()
 
-
-
     def end_generation(self):
         
         self.best_fish_rewards.append(self.best_fish.reward.total)
@@ -96,23 +99,12 @@ class Aise():
 
         self.best_brain = self.best_fish.brain
         self.generation += 1
+
+        self.game_data.brain = self.best_brain
+        self.game_data.generation = self.generation
+        self.game_data.save()
     
     def on_draw(self):
         pass
 
 
-
-def main():
-    game = MyGame()
-    game.setup()
-    arcade.run()
-
-if __name__ == "__main__":
-    import cProfile, pstats
-    profiler = cProfile.Profile()
-    profiler.enable()
-    main()
-    profiler.disable()
-    stats = pstats.Stats(profiler).sort_stats('ncalls')
-    stats = pstats.Stats(profiler)
-    stats.dump_stats('aise.prof')
