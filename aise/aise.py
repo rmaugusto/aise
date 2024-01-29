@@ -1,3 +1,4 @@
+import random
 from typing import List
 from neural_network import NeuralNetwork
 from thread import ThreadPool
@@ -11,7 +12,7 @@ TOTAL_UPDATE_THREADS = 10
 SENSOR_COUNT = 6
 SENSOR_MAX_DISTANCE = 100
 
-BRAIN_SIZE_INPUT = 1 + 1 + SENSOR_COUNT
+BRAIN_SIZE_INPUT = 1 + 1 + 1 + SENSOR_COUNT
 BRAIN_SIZE_HIDDEN = 6
 BRAIN_SIZE_OUTPUT = 4
 
@@ -51,11 +52,13 @@ class Aise():
 
             if self.best_brain:
                 brain = self.best_brain.clone()
-                brain.mutate_randomly()
+                if i > 0:
+                    brain.mutate_randomly()
             else:
                 brain = NeuralNetwork([BRAIN_SIZE_INPUT, BRAIN_SIZE_HIDDEN, BRAIN_SIZE_HIDDEN, BRAIN_SIZE_OUTPUT],'relu')
 
-            fish = Fish(id=i,angle=0,ray_casting=sensor,brain=brain, game_context=self.game_context)
+            # rand from 1 to 10000
+            fish = Fish(id=random.randint(1, 10000),angle=0,ray_casting=sensor,brain=brain, game_context=self.game_context)
             fish.center_x = x
             fish.center_y = y
 
@@ -81,8 +84,8 @@ class Aise():
         self.best_fish  = best_fish_alive
 
         for f in self.fishes:
-            #if f.reward.total > self.best_fish.reward.total:
-            if f.distance > self.best_fish.distance:
+            if f.reward.total > self.best_fish.reward.total:
+            #if f.distance > self.best_fish.distance:
                 self.best_fish = f
 
                 if f.alive:

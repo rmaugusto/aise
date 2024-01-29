@@ -1,68 +1,81 @@
 import numpy as np
 
+from utils import Direction
+
+class DataObject():
+    pass
 
 class Reward():
-    def __init__(self, entity):
-        self.entity = entity
-        self.previous_angles = []
-        self.min_distances = np.array([])
+    def __init__(self):
         self.total = 0
-        self.last_distance = entity.distance
+        self.last_angle = None
+        self.accumulated_rotation = 0
+        self.last_distance = 0
+        self.data_history = []
 
-    def update(self):
-
-
-        self.distance()
-
-        self.in_circle()
-
+    def update(self, id, angle, distance_to_wall, direction, speed_up, slow_down, running_distance, speed, center_x, center_y):
         
-        #if self.is_moving_away_from_wall() > 0:
-        #    self.total += 40
+        data = DataObject()
+        data.angle = angle
+        data.distance_to_wall = distance_to_wall
+        data.direction = direction
+        data.speed_up = speed_up
+        data.slow_down = slow_down
+        data.running_distance = running_distance
+        data.speed = speed
+        data.center_x = center_x
+        data.center_y = center_y
 
-    def is_moving_away_from_wall(self):
+        self.update_distance(data)
 
-        self.min_distances = np.append(self.min_distances, self.entity.sensor.min_distance)
+        self.update_in_circle(data)
 
-        if len(self.min_distances) > 20:
-            self.min_distances = self.min_distances[1:]
-        else:
-            return -1
+        #print(id, data.angle, data.direction, data.distance_to_wall, data.speed, self.accumulated_rotation) 
 
-        slopes = np.diff(self.min_distances)
-        average_slope = np.mean(slopes)
+        if self.is_in_cicle():
+            pass
+            #print all angles of data_history items
+            #for i in range(len(self.data_history)):
+            #    print(self.data_history[i].angle, self.data_history[i].direction, self.data_history[i].distance_to_wall, self.data_history[i].speed) 
+            #print(data.angle, data.direction, data.distance_to_wall, data.speed) 
+            self.total -= 30
 
-        #print(self.min_distances.shape, average_slope)
-        return average_slope
+        self.data_history.append(data)
 
-    def distance(self):
+        if len(self.data_history) > 20:
+            self.data_history = self.data_history[1:]
 
-        if (self.entity.distance - self.last_distance) >= 100:
-            self.last_distance = self.entity.distance
-            self.total += 10
+    def update_distance(self, data):
+        self.total += (data.running_distance - self.last_distance) * 0.1
+        self.last_distance = data.running_distance
 
-    def in_circle(self):
-        self.previous_angles.append(self.entity.angle)
+    def update_in_circle(self, data):
 
-        if len(self.previous_angles) > 10:
-            self.previous_angles.pop(0)
+        if self.last_angle is None:
+            self.last_angle = data.angle
 
-        if self.is_moving_in_circles():
-            self.total -= 20
-            return True
+        if data.direction == Direction.RIGHT:
+            if self.last_angle <= data.angle:
+                angle_change = data.angle - self.last_angle
+            else:
+                angle_change = 360 - self.last_angle + data.angle
         
-        return False
+        if data.direction == Direction.LEFT:
+            if self.last_angle >= data.angle:
+                angle_change = data.angle - self.last_angle
+            else:
+                angle_change = data.angle + self.last_angle - 360
 
+        if data.direction == Direction.STRAIGHT:
+            angle_change = 0
 
-    def is_moving_in_circles(self):
+        self.accumulated_rotation += angle_change
+        self.last_angle = data.angle
 
-        if len(self.previous_angles) < 10:
-            return False
+        if len(self.data_history) > 3:
+            if data.direction == self.data_history[-1].direction == self.data_history[-2].direction != self.data_history[-3].direction:
+                self.accumulated_rotation = 0
 
-        total_change = 0
-        for i in range(1, len(self.previous_angles)):
-            angle_diff = abs(self.previous_angles[i] - self.previous_angles[i - 1])
-            total_change += angle_diff
-
-        return total_change > 360
-
+    def is_in_cicle(self):
+        return abs(self.accumulated_rotation) >= 360
+    

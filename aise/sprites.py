@@ -1,6 +1,7 @@
 import math
 import arcade
 import numpy as np
+from utils import Direction
 from reward import Reward
 
 from ray_casting import RayCasting
@@ -31,17 +32,15 @@ class Fish(arcade.Sprite):
         self.distance = 0
         self.sensor = ray_casting
         self.brain = brain
-        self.reward = Reward(self)
+        self.reward = Reward()
 
     def rotate_left(self):
-        self.angle += FISH_ROTATION_SPEED
-        self.angle = self.angle % 360
-        #self.energy -= FISH_ROTATION_SPEED
-
-    def rotate_right(self):
         self.angle -= FISH_ROTATION_SPEED
         self.angle = self.angle % 360
-        #self.energy -= FISH_ROTATION_SPEED
+
+    def rotate_right(self):
+        self.angle += FISH_ROTATION_SPEED
+        self.angle = self.angle % 360
 
     def speed_up(self):
         if self.speed < MAX_FISH_SPEED:
@@ -68,21 +67,46 @@ class Fish(arcade.Sprite):
             if not self.game_context.headless:
                 self.update_texture(delta_time)
 
-            input = [self.distance, self.reward.total] + self.sensor.ray_distance
+            input = [self.distance, self.reward.total, self.speed] + self.sensor.ray_distance
             sensor_input = np.array(input).reshape(-1, 1)
 
             decision = self.brain.forward(sensor_input)
 
-#            if decision[0] > 0:
-#                self.speed_up()
-#
-#            if decision[1] > 0:
-#                self.slow_down()
+            speed_up = False
+            slow_down = False
+            turn_right = False
+            turn_left = False
+
+            if decision[0] > 0:
+                speed_up = True
+   
+            if decision[1] > 0:
+                slow_down = True
 
             if decision[2] > 0:
-                self.rotate_right()
+                turn_right = True
 
             if decision[3] > 0:
+                turn_left = True
+
+            direction = Direction.STRAIGHT
+
+            if turn_left and not turn_right:
+                direction = Direction.LEFT
+
+            if turn_right and not turn_left:
+                direction = Direction.RIGHT
+
+            if speed_up and not slow_down:
+                self.speed_up()
+
+            if slow_down and not speed_up:
+                self.slow_down()
+
+            if direction == Direction.RIGHT:
+                self.rotate_right()
+
+            if direction == Direction.LEFT:
                 self.rotate_left()
 
             self.forward()
@@ -95,7 +119,7 @@ class Fish(arcade.Sprite):
             if self.sensor.min_distance <= 10:
                 self.collided = True
 
-            self.reward.update()
+            self.reward.update(self.id, self.angle, self.sensor.min_distance, direction, speed_up, slow_down, self.distance,  self.speed, self.center_x, self.center_y)
 
         if (self.alive and self.collided):
             self.alive = False

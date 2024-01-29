@@ -1,8 +1,12 @@
-import cv2
-import heapq
-import numpy as np
+from enum import Enum
 from queue import Queue
 from threading import Thread
+
+
+class Direction(Enum):
+    STRAIGHT = 1
+    LEFT = 2
+    RIGHT = 3
 
 class Util:
     pass

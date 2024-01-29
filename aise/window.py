@@ -46,12 +46,12 @@ class AiseWindow(arcade.Window):
         self.text_panel.set_text(0, f"Geração: {self.aise.generation}")
 
         pos = 0
-        for i in range(0,5):
+        for i in range(0,min(5, len(self.aise.fishes))):
             f = self.aise.fishes[i]
             pos += 1
             self.text_panel.set_text(pos, f"Pos #{i} - #{f.id}")
             pos += 1
-            self.text_panel.set_text(pos, f"-> Reward: {f.reward.total}, Dist: {f.distance}")
+            self.text_panel.set_text(pos, f"-> Reward: {f.reward.total:.2f}, Dist: {f.distance:.2f}")
 
     def on_update(self, delta_time):
 
