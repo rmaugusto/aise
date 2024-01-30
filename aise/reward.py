@@ -1,9 +1,14 @@
 import numpy as np
 
-from utils import Direction
+from aise.utils import Direction
 
 class DataObject():
     pass
+
+PENALTY_IN_CIRCLE = 30
+PENALTY_UNIQUE_DIRECTION = 5
+BONUS_DISTANCE_FACTOR = 0.1
+DATA_HISTORY_SIZE = 30
 
 class Reward():
     def __init__(self):
@@ -26,27 +31,48 @@ class Reward():
         data.center_x = center_x
         data.center_y = center_y
 
+        self.data_history.append(data)
+
+        if len(self.data_history) > DATA_HISTORY_SIZE:
+            self.data_history = self.data_history[1:]
+
         self.update_distance(data)
 
         self.update_in_circle(data)
 
-        #print(id, data.angle, data.direction, data.distance_to_wall, data.speed, self.accumulated_rotation) 
-
         if self.is_in_cicle():
-            pass
-            #print all angles of data_history items
-            #for i in range(len(self.data_history)):
-            #    print(self.data_history[i].angle, self.data_history[i].direction, self.data_history[i].distance_to_wall, self.data_history[i].speed) 
-            #print(data.angle, data.direction, data.distance_to_wall, data.speed) 
-            self.total -= 30
+            self.total -= PENALTY_IN_CIRCLE
 
-        self.data_history.append(data)
+        self.update_unique_direction()
 
-        if len(self.data_history) > 20:
-            self.data_history = self.data_history[1:]
+
+
+    def update_unique_direction(self):
+        #Check if entity used all directions in last data history
+
+        found_straight = False
+        found_right = False
+        found_left = False
+
+        if len(self.data_history) < DATA_HISTORY_SIZE:
+            return False
+
+        for d in self.data_history:
+            if d.direction == Direction.LEFT:
+                found_left = True
+            elif d.direction == Direction.RIGHT:
+                found_right = True
+            elif d.direction == Direction.STRAIGHT:
+                found_straight = True
+            
+        if not found_left or not found_right or not found_straight:
+            self.total -= PENALTY_UNIQUE_DIRECTION
+            return True
+
+        return False
 
     def update_distance(self, data):
-        self.total += (data.running_distance - self.last_distance) * 0.1
+        self.total += (data.running_distance - self.last_distance) * BONUS_DISTANCE_FACTOR
         self.last_distance = data.running_distance
 
     def update_in_circle(self, data):

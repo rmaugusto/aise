@@ -1,9 +1,9 @@
+from enum import Enum
 import math
 import arcade
 import numpy as np
 from utils import Direction
 from reward import Reward
-
 from ray_casting import RayCasting
 
 MIN_FISH_SPEED = 1

@@ -20,7 +20,7 @@ class TestReward(unittest.TestCase):
 
         for i in range(len(data)):
             d = data[i] 
-            reward.update(d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7], d[8])
+            reward.update(0, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7], d[8])
             #print(d, reward.accumulated_rotation)
             self.assertEqual(reward.is_in_cicle() , False)
 
@@ -41,7 +41,7 @@ class TestReward(unittest.TestCase):
 
         for i in range(len(data)):
             d = data[i]
-            reward.update(d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7], d[8])
+            reward.update(0, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7], d[8])
 
             if i < 72:
                 self.assertEqual(reward.is_in_cicle() , False)
@@ -64,7 +64,7 @@ class TestReward(unittest.TestCase):
 
         for i in range(len(data)):
             d = data[i]
-            reward.update(d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7], d[8])
+            reward.update(0, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7], d[8])
 
             if i < 72:
                 self.assertEqual(reward.is_in_cicle() , False)
@@ -100,7 +100,7 @@ class TestReward(unittest.TestCase):
 
         for i in range(len(data)):
             d = data[i]
-            reward.update(d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7], d[8])
+            reward.update(0, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7], d[8])
             self.assertEqual(reward.is_in_cicle() , False)
 
     def test_run_circle_right_incomplete_and_left(self):
@@ -131,7 +131,7 @@ class TestReward(unittest.TestCase):
 
         for i in range(len(data)):
             d = data[i]
-            reward.update(d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7], d[8])
+            reward.update(0, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7], d[8])
             self.assertEqual(reward.is_in_cicle() , False)
 
 
