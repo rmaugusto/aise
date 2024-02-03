@@ -3,7 +3,7 @@ import math
 import arcade
 import numpy as np
 from utils import Direction
-from reward import Reward
+from reward import Reward, RewardDataInput
 from ray_casting import RayCasting
 
 MIN_FISH_SPEED = 1
@@ -119,7 +119,12 @@ class Fish(arcade.Sprite):
             if self.sensor.min_distance <= 10:
                 self.collided = True
 
-            self.reward.update(self.id, self.angle, self.sensor.min_distance, direction, speed_up, slow_down, self.distance,  self.speed, self.center_x, self.center_y)
+            #self.angle, self.sensor.min_distance, direction, speed_up, slow_down, self.distance,  self.speed, self.center_x, self.center_y
+            self.reward.update( 
+                RewardDataInput(angle=self.angle, distance_to_wall=self.sensor.min_distance, direction=direction, \
+                                speed_up=speed_up, slow_down=slow_down, running_distance=self.distance, speed=self.speed, \
+                                    center_x=self.center_x, center_y=self.center_y) 
+            )
 
         if (self.alive and self.collided):
             self.alive = False
