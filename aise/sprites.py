@@ -67,7 +67,7 @@ class Fish(arcade.Sprite):
             if not self.game_context.headless:
                 self.update_texture(delta_time)
 
-            input = [self.distance, self.reward.total, self.speed] + self.sensor.ray_distance
+            input = [self.angle, self.distance, self.reward.total, self.speed] + self.sensor.ray_distance
             sensor_input = np.array(input).reshape(-1, 1)
 
             decision = self.brain.forward(sensor_input)

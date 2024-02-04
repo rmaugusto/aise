@@ -12,7 +12,7 @@ TOTAL_UPDATE_THREADS = 10
 SENSOR_COUNT = 6
 SENSOR_MAX_DISTANCE = 100
 
-BRAIN_SIZE_INPUT = 1 + 1 + 1 + SENSOR_COUNT
+BRAIN_SIZE_INPUT = 1 + 1 + 1 + 1 + SENSOR_COUNT
 BRAIN_SIZE_HIDDEN = 6
 BRAIN_SIZE_OUTPUT = 4
 
@@ -47,6 +47,7 @@ class Aise():
         self.fishes = []
 
         x, y = self.game_context.map.get_random_lake_position()
+        random_angle = random.randint(0, 359)
         for i in range(TOTAL_FISHES):
             sensor = RayCasting(SENSOR_COUNT,SENSOR_MAX_DISTANCE,self.game_context)
 
@@ -58,7 +59,7 @@ class Aise():
                 brain = NeuralNetwork([BRAIN_SIZE_INPUT, BRAIN_SIZE_HIDDEN, BRAIN_SIZE_HIDDEN, BRAIN_SIZE_OUTPUT],'relu')
 
             # rand from 1 to 10000
-            fish = Fish(id=random.randint(1, 10000),angle=0,ray_casting=sensor,brain=brain, game_context=self.game_context)
+            fish = Fish(id=random.randint(1, 10000),angle=random_angle,ray_casting=sensor,brain=brain, game_context=self.game_context)
             fish.center_x = x
             fish.center_y = y
 
