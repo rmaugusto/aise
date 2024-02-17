@@ -166,4 +166,4 @@ distance_matrix.npy
 *.dc
 temp.dat
 deepcars.prof
-aise.gd
+*.gd

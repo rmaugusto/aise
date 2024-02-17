@@ -15,7 +15,14 @@ class AiseHeadless():
         self.aise.on_update(delta_time)
     
     def on_draw(self):
-        print(f'{self.counter} fps, gen: {self.aise.generation}, dist: {self.aise.best_fish.distance}, reward: {self.aise.best_fish.reward.total}')
+        distance = ""
+        reward = ""
+
+        if self.aise.best_fish is not None:
+            distance = self.aise.best_fish.distance
+            reward = self.aise.best_fish.reward.total
+
+        print(f'{self.counter} fps, gen: {self.aise.generation}, dist: {distance}, reward: {reward}')
 
     def run(self):
         while True:

@@ -6,7 +6,9 @@ class DataObject():
     pass
 
 PENALTY_IN_CIRCLE = -30
-PENALTY_UNIQUE_DIRECTION = -40
+PENALTY_COLLISION = -50
+PENALTY_UNIQUE_DIRECTION = -10
+BONUS_UNIQUE_DIRECTION = 100
 DISTANCE_UNIQUE_DIRECTION_LIMIT = 1000
 BONUS_DISTANCE_FACTOR = 0.1
 DATA_HISTORY_SIZE = 10
@@ -81,6 +83,8 @@ class UniqueDirectionReward():
 
     def calculate(self, hist: list[RewardDataInput]) -> float:
 
+        points = 0
+
         data = hist[-1]
 
         self.direction_accumulated_distance += data.speed
@@ -96,14 +100,30 @@ class UniqueDirectionReward():
         if self.direction_accumulated_distance > DISTANCE_UNIQUE_DIRECTION_LIMIT:
 
             if not self.moved_straight or not self.moved_left or not self.moved_right:
-                return PENALTY_UNIQUE_DIRECTION
+                points = PENALTY_UNIQUE_DIRECTION
+            else:
+                points = BONUS_UNIQUE_DIRECTION
 
             self.direction_accumulated_distance = 0
             self.moved_straight = False
             self.moved_right = False
             self.moved_left = False
 
+        return points
+
+
+class CollisionReward():
+    def __init__(self):
+        pass
+
+    def calculate(self, hist: list[RewardDataInput]) -> float:
+        data = hist[-1]
+        
+        if data.distance_to_wall <= 10:
+            return PENALTY_COLLISION
+
         return 0
+
 
 
 class Reward():
@@ -114,6 +134,7 @@ class Reward():
         self.distance_reward = DistanceReward()
         self.in_circle_reward = InCircleReward()
         self.unique_direction_reward = UniqueDirectionReward()
+        self.collision_reward = CollisionReward()
         self.data_history: list[RewardDataInput] = []
 
     def update(self, data: RewardDataInput):
@@ -125,3 +146,4 @@ class Reward():
         self.total += self.distance_reward.calculate(self.data_history)
         self.total += self.in_circle_reward.calculate(self.data_history)
         self.total += self.unique_direction_reward.calculate(self.data_history)
+        self.total += self.collision_reward.calculate(self.data_history)

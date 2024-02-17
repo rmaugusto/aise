@@ -1,5 +1,6 @@
 import random
 from typing import List
+from neural_network_pytorch import NeuralNetworkPyTorch
 from neural_network import NeuralNetwork
 from thread import ThreadPool
 from game_context import GameContext, GameData
@@ -7,7 +8,7 @@ from sprites import Fish
 from ray_casting import RayCasting
 
 TOTAL_FISHES = 20
-TOTAL_UPDATE_THREADS = 10
+TOTAL_UPDATE_THREADS = 1
 
 SENSOR_COUNT = 6
 SENSOR_MAX_DISTANCE = 100
@@ -46,20 +47,24 @@ class Aise():
     def restart(self):
         self.fishes = []
 
-        x, y = self.game_context.map.get_random_lake_position()
+        #x, y = self.game_context.map.get_random_lake_position()
+        x, y = self.game_context.map.get_random_lake_position_with_buffer()
+
         random_angle = random.randint(0, 359)
-        for i in range(TOTAL_FISHES):
+        total_fishes = 1 if self.game_context.running_mode else TOTAL_FISHES
+        for i in range(total_fishes):
             sensor = RayCasting(SENSOR_COUNT,SENSOR_MAX_DISTANCE,self.game_context)
 
             if self.best_brain:
                 brain = self.best_brain.clone()
-                if i > 0:
-                    brain.mutate_randomly()
-            else:
-                brain = NeuralNetwork([BRAIN_SIZE_INPUT, BRAIN_SIZE_HIDDEN, BRAIN_SIZE_HIDDEN, BRAIN_SIZE_OUTPUT],'relu')
 
-            # rand from 1 to 10000
-            fish = Fish(id=random.randint(1, 10000),angle=random_angle,ray_casting=sensor,brain=brain, game_context=self.game_context)
+                if not self.game_context.running_mode:
+                    brain.mutate_randomly()
+                    
+            else:
+                brain = NeuralNetworkPyTorch([BRAIN_SIZE_INPUT, BRAIN_SIZE_HIDDEN, BRAIN_SIZE_HIDDEN, BRAIN_SIZE_OUTPUT],'relu')
+
+            fish = Fish(id=i,angle=random_angle,ray_casting=sensor,brain=brain, game_context=self.game_context)
             fish.center_x = x
             fish.center_y = y
 
@@ -79,18 +84,18 @@ class Aise():
 
         self.pool.wait_completion()
 
-        self.fishes.sort(key=lambda x: x.reward.total, reverse=True)
+        if not self.game_context.headless:
+            self.fishes.sort(key=lambda x: x.reward.total, reverse=True)
+            best_fish_alive = self.fishes[0]
+            self.best_fish  = best_fish_alive
 
-        best_fish_alive = self.fishes[0]
-        self.best_fish  = best_fish_alive
+            for f in self.fishes:
+                if f.reward.total > self.best_fish.reward.total:
+                #if f.distance > self.best_fish.distance:
+                    self.best_fish = f
 
-        for f in self.fishes:
-            if f.reward.total > self.best_fish.reward.total:
-            #if f.distance > self.best_fish.distance:
-                self.best_fish = f
-
-                if f.alive:
-                    best_fish_alive = f
+                    if f.alive:
+                        best_fish_alive = f
 
         if all_dead:
             self.end_generation()
@@ -98,15 +103,20 @@ class Aise():
 
     def end_generation(self):
         
-        self.best_fish_rewards.append(self.best_fish.reward.total)
-        self.best_fish_distance.append(self.best_fish.distance)
+        if not self.game_context.running_mode:
+            
+            self.fishes.sort(key=lambda x: x.reward.total, reverse=True)
+            self.best_fish = self.fishes[0]
 
-        self.best_brain = self.best_fish.brain
-        self.generation += 1
+            self.best_fish_rewards.append(self.best_fish.reward.total)
+            self.best_fish_distance.append(self.best_fish.distance)
 
-        self.game_data.brain = self.best_brain
-        self.game_data.generation = self.generation
-        self.game_data.save()
+            self.best_brain = self.best_fish.brain
+            self.generation += 1
+
+            self.game_data.brain = self.best_brain
+            self.game_data.generation = self.generation
+            self.game_data.save()
     
     def on_draw(self):
         pass

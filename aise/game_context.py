@@ -6,6 +6,7 @@ class GameContext():
     def __init__(self):
         self.map = Map()
         self.headless = False
+        self.running_mode = False
 
 class GameData(object):
     def __init__(self):

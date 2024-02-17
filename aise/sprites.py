@@ -2,6 +2,7 @@ from enum import Enum
 import math
 import arcade
 import numpy as np
+import torch
 from utils import Direction
 from reward import Reward, RewardDataInput
 from ray_casting import RayCasting
@@ -68,9 +69,12 @@ class Fish(arcade.Sprite):
                 self.update_texture(delta_time)
 
             input = [self.angle, self.distance, self.reward.total, self.speed] + self.sensor.ray_distance
-            sensor_input = np.array(input).reshape(-1, 1)
 
-            decision = self.brain.forward(sensor_input)
+            input_tensor = torch.tensor(input, dtype=torch.float)
+            decision = self.brain(input_tensor)
+
+            #sensor_input = np.array(input).reshape(-1, 1)
+            #decision = self.brain.forward(sensor_input)
 
             speed_up = False
             slow_down = False
@@ -119,7 +123,6 @@ class Fish(arcade.Sprite):
             if self.sensor.min_distance <= 10:
                 self.collided = True
 
-            #self.angle, self.sensor.min_distance, direction, speed_up, slow_down, self.distance,  self.speed, self.center_x, self.center_y
             self.reward.update( 
                 RewardDataInput(angle=self.angle, distance_to_wall=self.sensor.min_distance, direction=direction, \
                                 speed_up=speed_up, slow_down=slow_down, running_distance=self.distance, speed=self.speed, \
@@ -131,6 +134,11 @@ class Fish(arcade.Sprite):
 
         if self.reward.total < 0:
             self.alive = False
+
+        # avoid runnning forever on tranning
+        if not self.game_context.running_mode:
+            if self.distance > 6000:
+                self.alive = False
 
         return super().update()
 
@@ -151,6 +159,7 @@ class Fish(arcade.Sprite):
     def draw(self, *, filter=None, pixelated=None, blend_function=None):
         r = super().draw(filter=filter, pixelated=pixelated, blend_function=blend_function)
         
-        #self.sensor.draw() 
+        if self.game_context.running_mode:
+            self.sensor.draw() 
 
         return r

@@ -7,6 +7,7 @@ import signal
 
 cprofile = False 
 headless = False
+running_mode = False
 
 def handler(signum, frame):
     res = input("Ctrl-c was pressed. Do you really want to exit? y/n ")
@@ -30,18 +31,21 @@ def main():
 
     if headless:        
         game = AiseHeadless()
-        game.setup()
         game.aise.game_context.headless = True
+        game.aise.game_context.running_mode = running_mode
+        game.setup()
         game.run()
     else:
         game = AiseWindow()
-        game.setup()
         game.aise.game_context.headless = False
+        game.aise.game_context.running_mode = running_mode
+        game.setup()
         arcade.run()
 
 if __name__ == "__main__":
 
     globals()["headless"] = ('--headless') in sys.argv
+    globals()["running_mode"] = ('--running-mode') in sys.argv
 
     if '--cprofile' in sys.argv :
         import cProfile

@@ -16,7 +16,8 @@ class Worker(Thread):
             func, args, kargs = self.tasks.get()
             try:
                 func(*args, **kargs)
-            except:
+            except Exception as e:
+                print('error:', e)
                 pass
             finally:
                 self.tasks.task_done()
