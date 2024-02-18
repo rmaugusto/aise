@@ -137,7 +137,7 @@ class Fish(arcade.Sprite):
 
         # avoid runnning forever on tranning
         if not self.game_context.running_mode:
-            if self.distance > 6000:
+            if self.distance > 20000:
                 self.alive = False
 
         return super().update()

@@ -1,3 +1,4 @@
+from abc import ABC
 import random
 from typing import List
 from neural_network_pytorch import NeuralNetworkPyTorch
@@ -8,7 +9,7 @@ from sprites import Fish
 from ray_casting import RayCasting
 
 TOTAL_FISHES = 20
-TOTAL_UPDATE_THREADS = 1
+TOTAL_UPDATE_THREADS = 4
 
 SENSOR_COUNT = 6
 SENSOR_MAX_DISTANCE = 100
@@ -18,6 +19,15 @@ BRAIN_SIZE_HIDDEN = 6
 BRAIN_SIZE_OUTPUT = 4
 
 #1845
+
+class EventNotification():
+    def __init__(self):
+        self.best_fish = None
+        self.generation = 0
+
+class AbstractEventListener(ABC):
+    def on_event(self, notification: EventNotification):
+        pass
 
 class Aise():
     def __init__(self):
@@ -30,6 +40,7 @@ class Aise():
         self.best_fish_rewards: List[float] = []
         self.best_fish_distance= []
         self.game_data = GameData()
+        self.listener = None
 
     def setup(self):
 
@@ -59,7 +70,8 @@ class Aise():
                 brain = self.best_brain.clone()
 
                 if not self.game_context.running_mode:
-                    brain.mutate_randomly()
+                    if i > 0:
+                        brain.mutate_randomly()
                     
             else:
                 brain = NeuralNetworkPyTorch([BRAIN_SIZE_INPUT, BRAIN_SIZE_HIDDEN, BRAIN_SIZE_HIDDEN, BRAIN_SIZE_OUTPUT],'relu')
@@ -80,7 +92,8 @@ class Aise():
         for fish in self.fishes:
             if fish.alive:
                 all_dead = False
-                self.pool.add_task(self.update_fish, fish, delta_time)
+                self.update_fish(fish, delta_time)
+                #self.pool.add_task(self.update_fish, fish, delta_time)
 
         self.pool.wait_completion()
 
@@ -118,6 +131,13 @@ class Aise():
             self.game_data.generation = self.generation
             self.game_data.save()
     
+        if self.listener:
+            notification = EventNotification()
+            notification.best_fish = self.best_fish
+            notification.generation = self.generation
+            self.listener.on_event(notification)
+
+
     def on_draw(self):
         pass
 

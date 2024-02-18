@@ -1,28 +1,25 @@
 from aise import Aise
 import time
+from aise import AbstractEventListener, EventNotification
 
-class AiseHeadless():
+class AiseHeadless(AbstractEventListener):
     def __init__(self):
         self.aise = Aise()
+        self.aise.listener = self
         self.counter = 0
         self.update_time = time.time()
 
     def setup(self):
-
         self.aise.setup()
 
     def on_update(self, delta_time):
         self.aise.on_update(delta_time)
     
     def on_draw(self):
-        distance = ""
-        reward = ""
+        print(f'{self.counter} fps, generation {self.aise.generation}')
 
-        if self.aise.best_fish is not None:
-            distance = self.aise.best_fish.distance
-            reward = self.aise.best_fish.reward.total
-
-        print(f'{self.counter} fps, gen: {self.aise.generation}, dist: {distance}, reward: {reward}')
+    def on_event(self, notification: EventNotification):
+        print(f'End of generation {notification.generation}, reward: {notification.best_fish.reward.total}, dist: {notification.best_fish.distance}')
 
     def run(self):
         while True:
