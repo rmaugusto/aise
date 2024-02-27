@@ -1,4 +1,5 @@
 import numpy as np
+from game_context import GameContext
 
 from utils import Direction
 
@@ -11,6 +12,7 @@ PENALTY_UNIQUE_DIRECTION = -10
 BONUS_UNIQUE_DIRECTION = 100
 DISTANCE_UNIQUE_DIRECTION_LIMIT = 1000
 BONUS_DISTANCE_FACTOR = 0.1
+BONUS_AREA_EXPLORATION_FACTOR = 0.1
 DATA_HISTORY_SIZE = 10
 
 class RewardDataInput():
@@ -34,6 +36,26 @@ class DistanceReward():
         points = (data.running_distance - self.last_distance) * BONUS_DISTANCE_FACTOR
         self.last_distance = data.running_distance
         return points
+    
+class AreaExplorationReward():
+    def __init__(self, game_context: GameContext):
+        self.last_count = 0
+        self.area = np.zeros((game_context.map.map_height, game_context.map.map_width))
+
+    def calculate(self, hist: list[RewardDataInput]) -> float:
+        data = hist[-1]
+
+        x = int(data.center_x - 10)
+        y = int(data.center_y - 10)
+        x2 = int(data.center_x + 10)
+        y2 = int(data.center_y + 10)
+
+        self.area[y:y2, x:x2] = 1
+
+        ones_count = np.count_nonzero(self.area)
+        points = (ones_count - self.last_count) * BONUS_AREA_EXPLORATION_FACTOR
+        self.last_count = ones_count
+        return points    
 
 class InCircleReward():
     def __init__(self):
@@ -127,14 +149,16 @@ class CollisionReward():
 
 
 class Reward():
-    def __init__(self):
+    def __init__(self, game_context: GameContext):
         #reward
         self.total = 0
+        self.game_context = game_context
 
         self.distance_reward = DistanceReward()
         self.in_circle_reward = InCircleReward()
         self.unique_direction_reward = UniqueDirectionReward()
         self.collision_reward = CollisionReward()
+        self.area_exploration_reward = AreaExplorationReward(game_context)
         self.data_history: list[RewardDataInput] = []
 
     def update(self, data: RewardDataInput):
@@ -147,3 +171,4 @@ class Reward():
         self.total += self.in_circle_reward.calculate(self.data_history)
         self.total += self.unique_direction_reward.calculate(self.data_history)
         self.total += self.collision_reward.calculate(self.data_history)
+        self.total += self.area_exploration_reward.calculate(self.data_history)

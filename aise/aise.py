@@ -2,7 +2,7 @@ import random
 import time
 from typing import List
 from game_context import GameContext
-from sprites import Fish
+from agent import Fish
 from ray_casting import RayCasting
 
 class AiseTrainer():

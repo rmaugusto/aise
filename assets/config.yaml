@@ -3,8 +3,8 @@ mode: training
 cprofile: true
 
 training:
-  instances: 10
-  pool_size: -1 #-1 for all
+  instances: 5
+  pool_size: -1 #-1 for all threads, 0 for no threads, n for n threads
   headless: true
   agent_count: 20
   sensor_count: 6

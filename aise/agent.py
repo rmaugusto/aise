@@ -33,7 +33,7 @@ class Fish(arcade.Sprite):
         self.distance = 0
         self.sensor = ray_casting
         self.brain = brain
-        self.reward = Reward()
+        self.reward = Reward(self.game_context)
 
     def rotate_left(self):
         self.angle -= FISH_ROTATION_SPEED

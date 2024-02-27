@@ -1,3 +1,4 @@
+from contextlib import nullcontext
 from aise import AiseTrainer
 import time
 import multiprocessing
@@ -49,12 +50,17 @@ class TrainingHeadless():
                 inst.configure(self.best_brain.clone())
 
             pool_count = None if self.config.training.pool_size == -1 else self.config.training.pool_size
+            use_pool = False if self.config.training.pool_size == 0 else True
 
-            with multiprocessing.Pool(pool_count) as pool:
-
+            with multiprocessing.Pool(pool_count) if use_pool else nullcontext() as pool:
                 start_time = time.time()
-                results_async = [pool.apply_async(self.executar_metodo_instancia, (instancia,)) for instancia in self.instances]
-                results = [result.get() for result in results_async]
+                
+                if use_pool:
+                    results_async = [pool.apply_async(self.executar_metodo_instancia, (instancia,)) for instancia in self.instances]
+                    results = [result.get() for result in results_async]
+                else:
+                    results = [self.executar_metodo_instancia(instancia) for instancia in self.instances]
+
                 results.sort(key=lambda x: x.reward.total, reverse=True)
                 best_fish = results[0]
                 self.best_brain = best_fish.brain
@@ -62,14 +68,4 @@ class TrainingHeadless():
                 elapsed_time = time.time() - start_time
 
                 print(f'End of generation {self.generation}, reward: {best_fish.reward.total}, dist: {best_fish.distance} in {elapsed_time:.2f} seconds')
-
-
-        # while True:
-        #     self.counter += 1
-        #     self.on_update( 1 / self.counter)
-
-        #     if time.time() - self.update_time >= 1:
-        #         self.on_draw()
-        #         self.counter = 0
-        #         self.update_time = time.time()
 
