@@ -1,58 +1,88 @@
-
+from contextlib import contextmanager
 import arcade
 from window import AiseWindow
-from headless import AiseHeadless
-import sys
+from training import TrainingHeadless
 import signal
+import copy
+from yaml import load, Loader
 
-cprofile = False 
-headless = False
-running_mode = False
+# Use argparse for cleaner argument parsing
+import argparse
+parser = argparse.ArgumentParser()
+parser.add_argument("--mode", choices=["training", "simulation"], default=None, help="Running mode")
+parser.add_argument("--cprofile", action="store_true", help="Enable profiling")
+args = parser.parse_args()
 
-def handler(signum, frame):
-    res = input("Ctrl-c was pressed. Do you really want to exit? y/n ")
-    if res == 'y':
-        end_dump()
-        exit(0)
+# Declare variables for clarity
+mode = args.mode
+cprofile = args.cprofile
 
-def init_dump():
-    if globals()["cprofile"]:
-        globals()["cprofile"].enable()
+class ConfigObject:
+    def __init__(self, **entries): 
+        self.__dict__.update(entries)    
 
-def end_dump():
-    if globals()["cprofile"]:
-        import pstats
-        globals()["cprofile"].disable()
-        stats = pstats.Stats(globals()["cprofile"]).sort_stats('ncalls')
-        stats = pstats.Stats(globals()["cprofile"])
-        stats.dump_stats('aise.prof')
+    def is_training(self):
+        return self.mode == "training"
+
+    @classmethod
+    def from_dict(cls, data):
+        if isinstance(data, dict):
+            return cls(**{k: cls.from_dict(v) for k, v in data.items()})
+        else:
+            return data
+
+    def clone(self):
+        return copy.deepcopy(self)
+
+# Define a context manager for profiling
+@contextmanager
+def profiling():
+    if cprofile:
+        import cProfile
+        profiler = cProfile.Profile()
+        profiler.enable()
+        try:
+            yield
+        finally:
+            profiler.disable()
+            import pstats
+            stats = pstats.Stats(profiler).sort_stats('ncalls')
+            stats.dump_stats('aise.prof')
+    else:
+        yield  # No-op if profiling is disabled
+
 
 def main():
 
-    if headless:        
-        game = AiseHeadless()
-        game.aise.game_context.headless = True
-        game.aise.game_context.running_mode = running_mode
+    with open('assets/config.yaml', 'r') as f:
+        config = load(f, Loader=Loader)
+
+    #convert config to python object
+    config_obj = ConfigObject.from_dict(config)
+
+    #priority to args over config
+    if cprofile:
+        config_obj.cprofile = True
+
+    if mode:
+        config_obj.mode = mode
+
+
+    with profiling():  # Employ the context manager
+
+        if config_obj.is_training():
+            game = TrainingHeadless(config_obj)
+        else:
+            game = AiseWindow()
+
+        game.config = config_obj
         game.setup()
-        game.run()
-    else:
-        game = AiseWindow()
-        game.aise.game_context.headless = False
-        game.aise.game_context.running_mode = running_mode
-        game.setup()
-        arcade.run()
+
+        if config_obj.is_training():
+            game.run()
+        else:
+            arcade.run()  # Let arcade handle the main loop
 
 if __name__ == "__main__":
-
-    globals()["headless"] = ('--headless') in sys.argv
-    globals()["running_mode"] = ('--running-mode') in sys.argv
-
-    if '--cprofile' in sys.argv :
-        import cProfile
-        globals()["cprofile"] = cProfile.Profile()
-
-    signal.signal(signal.SIGINT, handler)
-    
-    init_dump()
+    signal.signal(signal.SIGINT, lambda signum, frame: exit())  # Simpler exit handling
     main()
-    end_dump()

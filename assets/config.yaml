@@ -1,0 +1,16 @@
+#training or simulation
+mode: training
+cprofile: true
+
+training:
+  instances: 10
+  pool_size: -1 #-1 for all
+  headless: true
+  agent_count: 20
+  sensor_count: 6
+  sensor_max_distance: 100
+
+#  model:
+    #BRAIN_SIZE_INPUT, BRAIN_SIZE_HIDDEN, BRAIN_SIZE_HIDDEN, BRAIN_SIZE_OUTPUT],'relu'
+
+

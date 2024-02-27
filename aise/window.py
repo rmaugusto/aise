@@ -1,5 +1,4 @@
 import arcade
-from aise import Aise
 from graph import AiseGraph
 from panel import TextPanel
 
