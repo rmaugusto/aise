@@ -1,39 +1,71 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 import copy
 
-class NeuralNetworkPyTorch(nn.Module):
+class NeuralNetwork(nn.Module):  # Inherit from nn.Module
+    def __init__(self, config=None):
+        super(NeuralNetwork, self).__init__()  # Call superclass constructor
 
-    def __init__(self, layer_sizes, activation='relu'):
-        super(NeuralNetworkPyTorch, self).__init__()
-        self.layer_sizes = layer_sizes
-        self.activation = activation
-
-        # Criando camadas da rede
+        self.config = config
         layers = []
-        for i in range(len(layer_sizes) - 1):
-            layers.append(nn.Linear(layer_sizes[i], layer_sizes[i+1]))
-            if i < len(layer_sizes) - 2:  # Não aplicamos ativação na última camada
-                if activation == 'relu':
-                    layers.append(nn.ReLU())
-                elif activation == 'leaky_relu':
-                    layers.append(nn.LeakyReLU(0.01))
-                elif activation == 'sigmoid':
-                    layers.append(nn.Sigmoid())
-                elif activation == 'tanh':
-                    layers.append(nn.Tanh())
-                else:
-                    raise ValueError("Unsupported activation function")
-        self.network = nn.Sequential(*layers)
 
-    def forward(self, x):
-        return self.network(x)
+        for idx in range(len(self.config.training.model.layers)-1):
+            layer = self.config.training.model.layers[idx]
+            next_layer = self.config.training.model.layers[idx+1]
+
+            if layer.type == "Input":
+                in_features = self.get_units(layer)
+                out_features = self.get_units(next_layer)
+            elif layer.type == "Output":
+                continue
+            else:
+                in_features = self.get_units(layer)
+                out_features = self.get_units(next_layer)
+
+            layers.append(nn.Linear(in_features,out_features))  
+    
+            activation = self.get_activation(layer.activation)
+            if activation:
+                layers.append( self.get_activation(layer.activation) )
+
+
+        self.model = nn.Sequential(*layers) 
+
+    def get_units(self, layer):
+        if layer.type == "Input":
+            return 1 + 1 + 1 + 1 + self.config.training.sensor_count
+        elif layer.type == "Output":
+            return 4
+        else:
+            return layer.units
+
+    def forward(self, input):
+        data = torch.tensor(input, dtype=torch.float)
+        return self.model(data)
+
+    def mutate(self, mutation_rate):
+        with torch.no_grad():
+            for param in self.model.parameters():
+                param += torch.randn_like(param) * mutation_rate
+                #param += torch.randn_like(param)
 
     def mutate_randomly(self):
         with torch.no_grad():
-            for param in self.network.parameters():
-                param.add_(torch.randn_like(param))
+            for param in self.model.parameters():
+                param += torch.randn_like(param)  
 
     def clone(self):
+        # Assuming your config object is also copyable
         return copy.deepcopy(self)
+    
+    def get_activation(self, activation_name):
+        if activation_name == 'relu':
+            return nn.ReLU()
+        elif activation_name == 'leaky_relu':
+            return nn.LeakyReLU()
+        elif activation_name == 'sigmoid':
+            return nn.Sigmoid()
+        elif activation_name == 'tanh':
+            return nn.Tanh()
+        else:
+            return None

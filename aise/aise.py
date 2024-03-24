@@ -1,6 +1,7 @@
+import math
 import random
 import time
-from typing import List
+from utils import Util
 from game_context import GameContext
 from agent import Fish
 from ray_casting import RayCasting
@@ -18,14 +19,15 @@ class AiseTrainer():
     def load(self):
         self.game_context.map.load_map("assets/map/map.tmx")
 
-    def configure(self, brain = None):
+    def configure(self, brain = None, last_best_fish = None, generation = 0):
         self.best_fish = None
+        self.last_best_fish = last_best_fish
+        self.generation = generation
         self.best_brain = brain
 
     def start(self):
         self.fishes = []
 
-        #x, y = self.game_context.map.get_random_lake_position()
         x, y = self.game_context.map.get_random_lake_position_with_buffer()
 
         random_angle = random.randint(0, 359)
@@ -36,16 +38,16 @@ class AiseTrainer():
             brain = self.best_brain.clone()
 
             if i > 0:
-                brain.mutate_randomly()
+                last_dist = 0 if self.last_best_fish is None else self.last_best_fish.distance
+                brain.mutate( Util.get_mutation_rate(self.generation, last_dist, self.config.training.distance_limit) )
                     
-            fish = Fish(id=i,angle=random_angle,ray_casting=sensor,brain=brain, game_context=self.game_context)
+            fish = Fish(id=i,angle=random_angle,ray_casting=sensor,brain=brain, game_context=self.game_context, config=self.config)
             fish.center_x = x
             fish.center_y = y
 
             self.fishes.append(fish)
 
         self.running = True
-
 
     def update_fish(self, fish, delta_time):
         fish.update(delta_time)
@@ -77,6 +79,6 @@ class AiseTrainer():
             self.update(1/60)
 
         self.elapsed_time = time.time() - start_time
-        print(f"Elapsed time: {self.elapsed_time}")
+        print(f"Elapsed time: {self.elapsed_time:.2f}, best agent reward: {self.best_fish.reward.total:.2f}")
 
         return self.best_fish

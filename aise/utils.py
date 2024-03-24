@@ -1,4 +1,5 @@
 from enum import Enum
+import math
 from queue import Queue
 from threading import Thread
 
@@ -9,8 +10,18 @@ class Direction(Enum):
     RIGHT = 3
 
 class Util:
-    pass
+    #static method
+    @staticmethod
+    def get_mutation_rate(epoch_number, travelled_distance, distance_limit):
+        minimum_rate = 0.01  # Minimum mutation rate
+        threshold_distance = 1000  # Distance below which full mutation is applied
+        scaled_rate = (travelled_distance / distance_limit) * 0.5  # Scaling factor of 0.5
+        decayed_rate = scaled_rate * 0.95 ** epoch_number  # Decay
+        sigmoid_rate = 1 / (1 + math.exp(-(travelled_distance - threshold_distance) / 1000))  # Sigmoid transition
+        no_mutation_prob = min(1, decayed_rate * sigmoid_rate)  # Probability of **not** mutating
+        return 1 - no_mutation_prob  # Return mutation rate
 
+    
 class Worker(Thread):
     """Thread executing tasks from a given tasks queue"""
     def __init__(self, tasks):

@@ -1,16 +1,33 @@
 #training or simulation
 mode: training
 cprofile: true
+keras_backend: torch #tensorflow, torch, jax
+
+agent:
+  collision_distance: 10
 
 training:
-  instances: 5
+  instances: 5 #number of instances per generation
   pool_size: -1 #-1 for all threads, 0 for no threads, n for n threads
   headless: true
-  agent_count: 20
-  sensor_count: 6
-  sensor_max_distance: 100
+  agent_count: 20 #number of agents
+  sensor_count: 6 #number of sensors per agent
+  sensor_max_distance: 100 #distance limit of sensors
+  distance_limit: 20000 #limit of distance when training to force new generation to be better
+  stop_on_reach_distance_limit: true
 
-#  model:
-    #BRAIN_SIZE_INPUT, BRAIN_SIZE_HIDDEN, BRAIN_SIZE_HIDDEN, BRAIN_SIZE_OUTPUT],'relu'
-
-
+  model:
+    layers:
+      - layer:
+        type: Input
+        activation: relu
+      - layer:
+        type: Dense
+        units: 64
+        activation: relu
+      - layer:
+        type: Dense
+        units: 64
+        activation: relu
+      - layer:
+        type: Output

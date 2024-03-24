@@ -1,11 +1,8 @@
-from enum import Enum
+import copy
 import math
 import arcade
-import numpy as np
-import torch
 from utils import Direction
 from reward import Reward, RewardDataInput
-from ray_casting import RayCasting
 
 MIN_FISH_SPEED = 1
 MAX_FISH_SPEED = 10
@@ -14,12 +11,13 @@ TEXTURE_CHANGE_INTERVAL = 0.4
 INITIAL_ENERGY = 1000
 
 class Fish(arcade.Sprite):
-    def __init__(self, id=-1, scale=0.5, x=0, y=0, angle=0, ray_casting=None, brain=None, game_context= None):
+    def __init__(self, id=-1, scale=0.5, x=0, y=0, angle=0, ray_casting=None, brain=None, game_context= None, config=None):
         super().__init__(scale=scale, center_x=x, center_y=y)
         self.id = id
         self.angle = angle
         self.collided = False
         self.alive = True
+        self.config = config
         self.game_context = game_context
         self.speed = MIN_FISH_SPEED
 
@@ -51,6 +49,9 @@ class Fish(arcade.Sprite):
         if self.speed > MIN_FISH_SPEED:
             self.speed -= 0.5
 
+    def clone(self):
+        return copy.deepcopy(self)
+
     def forward(self):
 
         angle_rad = math.radians(self.angle)
@@ -70,11 +71,7 @@ class Fish(arcade.Sprite):
 
             input = [self.angle, self.distance, self.reward.total, self.speed] + self.sensor.ray_distance
 
-            input_tensor = torch.tensor(input, dtype=torch.float)
-            decision = self.brain(input_tensor)
-
-            #sensor_input = np.array(input).reshape(-1, 1)
-            #decision = self.brain.forward(sensor_input)
+            decision = self.brain.forward(input)
 
             speed_up = False
             slow_down = False
@@ -120,7 +117,7 @@ class Fish(arcade.Sprite):
 
             self.sensor.cast_rays(self.angle, self.center_x, self.center_y)
             
-            if self.sensor.min_distance <= 10:
+            if self.sensor.min_distance <= self.config.agent.collision_distance:
                 self.collided = True
 
             self.reward.update( 
@@ -137,7 +134,7 @@ class Fish(arcade.Sprite):
 
         # avoid runnning forever on tranning
         if not self.game_context.running_mode:
-            if self.distance > 20000:
+            if self.distance > self.config.training.distance_limit:
                 self.alive = False
 
         return super().update()

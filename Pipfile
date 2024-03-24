@@ -11,6 +11,8 @@ verify_ssl = true
 [packages]
 arcade = "==2.6.17"
 numpy = "==1.26.2"
+keras = "==3.0.5"
+packaging = "==24.0"
 torch = {index = "pytorch",version = "==2.2.0"}
 torchvision = {index ="pytorch", version= "==0.17.0"}
 torchaudio = {index ="pytorch", version= "==2.2.0"}

@@ -1,10 +1,9 @@
 from contextlib import contextmanager
 import arcade
-from window import AiseWindow
-from training import TrainingHeadless
 import signal
 import copy
 from yaml import load, Loader
+import os
 
 # Use argparse for cleaner argument parsing
 import argparse
@@ -28,6 +27,8 @@ class ConfigObject:
     def from_dict(cls, data):
         if isinstance(data, dict):
             return cls(**{k: cls.from_dict(v) for k, v in data.items()})
+        elif isinstance(data, list):
+            return [cls.from_dict(item) for item in data]
         else:
             return data
 
@@ -60,6 +61,13 @@ def main():
     #convert config to python object
     config_obj = ConfigObject.from_dict(config)
 
+    os.environ["KERAS_BACKEND"] = config_obj.keras_backend
+    os.environ['TF_CPP_MIN_LOG_LEVEL'] = '0'
+    os.environ['PYTHONWARNINGS'] = 'ignore'
+
+    import logging
+    logging.getLogger('tensorflow').setLevel(logging.ERROR)    
+
     #priority to args over config
     if cprofile:
         config_obj.cprofile = True
@@ -71,8 +79,10 @@ def main():
     with profiling():  # Employ the context manager
 
         if config_obj.is_training():
+            from training import TrainingHeadless
             game = TrainingHeadless(config_obj)
         else:
+            from window import AiseWindow
             game = AiseWindow()
 
         game.config = config_obj
